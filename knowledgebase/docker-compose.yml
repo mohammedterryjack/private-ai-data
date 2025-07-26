@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: private_ai_data
+    volumes:
+      - ../data/postgres:/var/lib/postgresql/data
+    networks:
+      - knowledgebase-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d private_ai_data"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  knowledgebase:
+    build: .
+    ports:
+      - "8002:8000"
+    environment:
+      - DATABASE_URL=postgresql://admin:root@postgres:5432/private_ai_data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - knowledgebase-network
+
+volumes:
+  postgres_data:
+
+networks:
+  knowledgebase-network:
+    driver: bridge 

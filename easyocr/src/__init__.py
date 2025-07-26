@@ -1,0 +1,1 @@
+# EasyOCR service source package 

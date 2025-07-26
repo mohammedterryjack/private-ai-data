@@ -1,0 +1,24 @@
+FEATURES:
+- fileingestor
+    [] if no text found in pdf, convert pdf to image and pass to image ingestion route
+
+    [] fileingestor to handle: pdf, docx, pptx, html, png, jpg, jpeg, gif, bmp, tiff, md -> to pdf or image
+    [] add endpoint to fileingestor which converts any document type (ppt, doc, docx, excel, etc) into pdf (via libreoffice)
+
+    [] consider moving long-running ingest tasks to background rather than streaming (have a way to check on status, dont block the main LLM)
+    [] upload files - why a delay when streaming to frontend?
+
+    [] bulk uploads
+
+- tts
+    [] add coqui for tts 
+- stt
+    [] add whisper for stt 
+- llmagent
+    [] have a second llm that disagrees with whatever the first one says - and let it add to the conversation in this way
+- webinterface
+    [] K3s to replace webinterface docker compose
+
+BUGS:
+- all
+    [] refactor python - messy

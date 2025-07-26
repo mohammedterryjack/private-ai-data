@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrAID - Private AI & Data</title>
+    <meta name="description" content="Multi-service AI data platform for search, chat, and document management">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">AI</div>
+                    <div class="logo-text">
+                        <h1>PrAID</h1>
+                        <p>Private AI & Data</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="grid">
+                <!-- Left Column: Search and Results -->
+                <div class="search-section">
+                    <!-- Search Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Search</h2>
+                            <p class="card-subtitle">Search through your uploaded documents and knowledge base</p>
+                        </div>
+                        
+                        <form id="searchForm" class="search-form">
+                            <div class="form-group">
+                                <label for="searchInput" class="form-label">Search Query</label>
+                                <div class="search-input-container">
+                                    <input 
+                                        type="text" 
+                                        id="searchInput" 
+                                        class="form-input search-input" 
+                                        placeholder="Enter your search query and press Enter..."
+                                        autocomplete="off"
+                                    >
+                                    <button type="button" id="uploadTrigger" class="btn btn-secondary upload-trigger" title="Upload files">
+                                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <!-- Hidden file input -->
+                        <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.md,.html,.jpg,.jpeg,.png,.gif" style="display: none;">
+                        
+                        <!-- Upload overlay -->
+                        <div id="uploadOverlay" class="upload-overlay" style="display: none;">
+                            <div class="upload-zone" id="uploadZone">
+                                <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <div class="upload-text">Drag and drop files here or click to browse</div>
+                                <div class="upload-hint">Supports PDF, DOCX, TXT, images, and other formats</div>
+                            </div>
+                        </div>
+                        
+                        <div id="fileList" class="file-list">
+                            <!-- Selected files will be displayed here -->
+                        </div>
+                        
+                        <div id="searchResults" class="search-results">
+                            <!-- Search results will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Panel -->
+                <div class="status-section">
+                    <div class="card status-card">
+                        <div class="card-header status-header" id="statusHeader">
+                            <h2 class="card-title">System Status</h2>
+                            <p class="card-subtitle">Service dependencies and health</p>
+                            <button type="button" id="toggleStatusButton" class="btn btn-small btn-secondary toggle-button" title="Toggle status panel">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="dependencyTree" class="status-content">
+                            <!-- Service dependency tree will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: AI Chat -->
+                <div class="chat-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Ask</h2>
+                            <p class="card-subtitle">Chat with the AI about your documents and data</p>
+                            <button type="button" id="clearChatButton" class="btn btn-small btn-secondary clear-chat-button" title="Clear chat history">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div class="chat-container">
+                            <div id="chatMessages" class="chat-messages">
+                                <div class="chat-message message-system">
+                                    <div class="message-sender">System</div>
+                                    <div class="message-content">
+                                        Hello! I'm your AI assistant. I can help you with questions about your documents and data. 
+                                        Feel free to ask me anything!
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <form id="chatForm" class="chat-input-container">
+                                <input 
+                                    type="text" 
+                                    id="chatInput" 
+                                    class="form-input chat-input" 
+                                    placeholder="Type your message and press Enter..."
+                                    autocomplete="off"
+                                >
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- External JavaScript -->
+    <!-- Load modules in dependency order -->
+    <script src="/static/js/config.js?v=20240702"></script>
+    <script src="/static/js/utils.js?v=20240702"></script>
+    <script src="/static/js/resultRenderer.js?v=20240702"></script>
+    <script src="/static/js/fileUpload.js?v=20240702"></script>
+    <script src="/static/js/search.js?v=20240702"></script>
+    <script src="/static/js/chat.js?v=20240702"></script>
+    <script src="/static/js/status.js?v=20240702"></script>
+    <script src="/static/js/app.js?v=20240702"></script>
+</body>
+</html> 

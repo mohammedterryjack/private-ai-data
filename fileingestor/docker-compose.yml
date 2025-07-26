@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # Database with persistent storage
+  postgres:
+    image: pgvector/pgvector:pg15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: private_ai_data
+    volumes:
+      - ../data/postgres:/var/lib/postgresql/data
+    networks:
+      - fileingestor-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d private_ai_data"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Ollama Service
+  ollama:
+    build:
+      context: ../ollama
+      dockerfile: Dockerfile
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - fileingestor-network
+
+  # Knowledge Base Service
+  knowledgebase:
+    build: ../knowledgebase
+    ports:
+      - "8002:8000"
+    environment:
+      - DATABASE_URL=postgresql://admin:root@postgres:5432/private_ai_data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fileingestor-network
+
+  # Search Engine Service
+  searchengine:
+    build: ../searchengine
+    ports:
+      - "8001:8000"
+    environment:
+      - KNOWLEDGE_BASE_URL=http://knowledgebase:8000
+      - LLM_AGENT_URL=http://llmagent:8000
+    depends_on:
+      - knowledgebase
+      - llmagent
+    networks:
+      - fileingestor-network
+
+  # LLM Agent Service
+  llmagent:
+    build: ../llmagent
+    ports:
+      - "8003:8000"
+    environment:
+      - KNOWLEDGE_BASE_URL=http://knowledgebase:8000
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+    depends_on:
+      - knowledgebase
+      - ollama
+    networks:
+      - fileingestor-network
+
+  # EasyOCR Service
+  easyocr:
+    build: ../easyocr
+    ports:
+      - "8005:8000"
+    networks:
+      - fileingestor-network
+
+  # FileIngestor Service
+  fileingestor:
+    build: .
+    ports:
+      - "8004:8000"
+    environment:
+      - KNOWLEDGE_BASE_URL=http://knowledgebase:8000
+      - LLM_AGENT_URL=http://llmagent:8000
+      - EASYOCR_URL=http://easyocr:8000
+      - DATABASE_URL=postgresql://admin:root@postgres:5432/private_ai_data
+    volumes:
+      - ../data:/app/data
+    depends_on:
+      - knowledgebase
+      - llmagent
+      - easyocr
+    networks:
+      - fileingestor-network
+
+volumes:
+  postgres_data:
+
+networks:
+  fileingestor-network:
+    driver: bridge 

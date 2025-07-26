@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # Database with persistent storage and pgvector support
+  postgres:
+    image: pgvector/pgvector:pg15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: private_ai_data
+    volumes:
+      - ../data/postgres:/var/lib/postgresql/data
+    networks:
+      - webinterface-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d private_ai_data"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Knowledge Base Service
+  knowledgebase:
+    build: ../knowledgebase
+    ports:
+      - "8002:8000"
+    environment:
+      - DATABASE_URL=postgresql://admin:root@postgres:5432/private_ai_data
+    volumes:
+      - ../data/raw_files:/app/data/raw_files
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - webinterface-network
+
+  # Ollama Service
+  ollama:
+    build:
+      context: ../ollama
+      dockerfile: Dockerfile
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - webinterface-network
+
+  # LLM Agent Service
+  llmagent:
+    build: ../llmagent
+    ports:
+      - "8003:8000"
+    environment:
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+      - KNOWLEDGE_BASE_URL=http://knowledgebase:8000
+    depends_on:
+      - ollama
+    networks:
+      - webinterface-network
+
+  # Search Engine Service
+  searchengine:
+    build: ../searchengine
+    ports:
+      - "8001:8000"
+    environment:
+      - KNOWLEDGE_BASE_URL=http://knowledgebase:8000
+      - LLM_AGENT_URL=http://llmagent:8000
+    depends_on:
+      - knowledgebase
+      - llmagent
+    networks:
+      - webinterface-network
+
+  # EasyOCR Service
+  easyocr:
+    build: ../easyocr
+    ports:
+      - "8005:8000"
+    networks:
+      - webinterface-network
+
+  # FileIngestor Service
+  fileingestor:
+    build: ../fileingestor
+    ports:
+      - "8004:8000"
+    environment:
+      - KNOWLEDGE_BASE_URL=http://knowledgebase:8000
+      - LLM_AGENT_URL=http://llmagent:8000
+      - EASYOCR_URL=http://easyocr:8000
+      - DATABASE_URL=postgresql://admin:root@postgres:5432/private_ai_data
+    volumes:
+      - ../data/raw_files:/app/data/raw_files
+      - ../data/huggingface_cache:/app/.cache/huggingface
+    depends_on:
+      postgres:
+        condition: service_healthy
+      easyocr:
+        condition: service_started
+    networks:
+      - webinterface-network
+
+  # Web Interface - connects to existing services
+  webinterface:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - SEARCH_ENGINE_URL=http://host.docker.internal:8001
+      - KNOWLEDGE_BASE_URL=http://host.docker.internal:8002
+      - LLM_AGENT_URL=http://host.docker.internal:8003
+      - FILEINGESTOR_URL=http://host.docker.internal:8004
+    networks:
+      - webinterface-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  webinterface-network:
+    driver: bridge 
